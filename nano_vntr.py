@@ -70,8 +70,8 @@ class nanoVNTR:
     
     ## prints all read summaries for reads in which VNTRs were found
     def print_read_repeat_summaries(self):
-        outline = ""
         for read_id in sorted(self.REP_DICT):
+            outline = ""
             outline += read_id + "\t"
             for key in ['LF','RF','VNTR','REP_COUNT']:
                 outline += key + ': ' + str(self.REP_DICT[read_id][key]) + '\t'
