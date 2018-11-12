@@ -6,6 +6,7 @@ from collections import defaultdict
 from fuzzywuzzy import fuzz
 from sklearn.cluster import KMeans
 import numpy as np
+from multiprocessing import Process,Manager
 
 class nanoVNTR:
 
@@ -16,6 +17,7 @@ class nanoVNTR:
         self.CUTOFF = CUTOFF # threshold for accepting a fuzzy match
         self.REP_CUTOFF = REP_CUTOFF # threshold for what percentage of the rep region needs to conform to rep multiples
         self.PADDING = PADDING # number of extra repeats to add to the repeat count in the VNTR, like a bias term
+        self.READ_RECS = [] # list of read records, in Bio::SeqRecord format
         self.REP_DICT = {} # stores read VNTR information
 
     ## gets the positions of fuzzy matches at least as good as the threshold of a query string within a larger string 
@@ -60,14 +62,36 @@ class nanoVNTR:
                     return {'LF': l_matches, 'RF': r_matches, 'VNTR': mid, 'REP_COUNT': num_reps}
         return None
 
-    ## given a fasta or fastq file of an alignment, returns a dict of read ID -> output from get_single_read_repeats
-    def get_all_read_repeats(self,read_file,file_format):
-        self.REP_DICT = {} # to ensure idempotence
+    ## given a fasta or fastq file of reads, stores a list of read records
+    def get_read_records_from_file(self,read_file,file_format):
+        self.READ_RECS = [] # to ensure idempotence
         for record in SeqIO.parse(read_file,file_format):
+            self.READ_RECS.append(record)
+
+    ## given a list of reads in Bio::SeqRecord format and a global idct, updates the dict with read ID -> output from get_single_read_repeats
+    def get_read_repeats_for_seqrecords(self,record_list,return_dict):
+        results = {}
+        for record in record_list:
             repeat = self.get_single_read_repeats(record)
             if repeat is not None:
-                self.REP_DICT[record.id] = repeat
-    
+                results[record.id] = repeat
+        return_dict.update(results)
+
+    ## splits all the read records into multiple lists with one per CPU, given the number of CPUs to use, and updates
+    ## the self.REP_DICT with all of the results
+    def multiprocess_read_repeats(self,cpu_count):
+        splits = np.array_split(self.READ_RECS,cpu_count)
+        processes = []
+        m = Manager()
+        return_dict = m.dict() 
+        for i in range(len(splits)):
+            p = Process(target=self.get_read_repeats_for_seqrecords, args=(splits[i],return_dict))
+            processes.append(p)
+            p.start()
+        for one_process in processes:
+            one_process.join()
+        self.REP_DICT = dict(return_dict)
+
     ## prints all read summaries for reads in which VNTRs were found
     def print_read_repeat_summaries(self):
         for read_id in sorted(self.REP_DICT):
