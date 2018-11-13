@@ -33,8 +33,6 @@ if (args.verbose):
     nv.print_read_repeat_summaries()
 rep_counts = nv.convert_read_repeat_dict_to_repeat_count_list()
 
-## infer the number of alleles
-
 ## print the alleles that were found
-alleles = nv.get_VNTR_alleles(rep_counts,2,args.avg_measure)
+alleles = nv.get_VNTR_alleles(rep_counts,args.avg_measure)
 print(alleles)

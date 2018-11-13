@@ -5,6 +5,7 @@ import re
 from collections import defaultdict
 from fuzzywuzzy import fuzz
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_samples, silhouette_score
 import numpy as np
 from multiprocessing import Process,Manager
 
@@ -19,6 +20,7 @@ class nanoVNTR:
         self.PADDING = PADDING # number of extra repeats to add to the repeat count in the VNTR, like a bias term
         self.READ_RECS = [] # list of read records, in Bio::SeqRecord format
         self.REP_DICT = {} # stores read VNTR information
+        self.NUM_ALLELES_BIAS = 0.3 # used when estimating whether there are 1 or 2 alleles
 
     ## gets the positions of fuzzy matches at least as good as the threshold of a query string within a larger string 
     ## provided that the repeat makes up at least cutoff proportion of the string
@@ -105,11 +107,30 @@ class nanoVNTR:
     def convert_read_repeat_dict_to_repeat_count_list(self):
         return [self.REP_DICT[read_id]['REP_COUNT'] for read_id in self.REP_DICT if self.REP_DICT[read_id]['REP_COUNT'] is not None]
         
-    ## estimates the number of alleles in a list of repeat counts, based on variance
-
+    ## estimates the number of alleles (1 or 2) in a list of repeat counts, based on analysis of variance
+    def estimate_num_alleles(self,read_count_list):
+        sil_scores = {}
+        X = np.array(read_count_list).reshape(-1,1)
+        km = KMeans(n_clusters=2)
+        km.fit(X)
+        clusters = defaultdict(list) 
+        for i in range(len(km.labels_)):
+            clusters[km.labels_[i]].append(read_count_list[i])
+        # if the total variance is higher when we treat the list as two clusters than when we don't
+        # we will assume there is only 1 allele. Otherwise we assume 2.
+        two_allele_var = sum([np.var(clusters[i]) for i in clusters])
+        if two_allele_var > (np.var(read_count_list) - self.NUM_ALLELES_BIAS):
+            return 1
+        return 2
+        
     ## given a list of repeat counts, an expected number of alleles (1 <= k <= 2) and a measure of average, 
     ## returns k VNTR counts
-    def get_VNTR_alleles(self,read_count_list,num_alleles,average_measure):
+    def get_VNTR_alleles(self,read_count_list,average_measure):
+        num_alleles = self.estimate_num_alleles(read_count_list)
+        # handle the special case where there is only one allele
+        if num_alleles == 1:
+            allele = round(np.mean(read_count_list))
+            return [allele,allele]
         km = KMeans(n_clusters=num_alleles)
         km.fit(np.array(read_count_list).reshape(-1,1))
         if average_measure == 'centroid':

@@ -10,6 +10,10 @@ def test_get_matches():
 def test_get_region_rep_count():
     assert nv.get_region_rep_count('CAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGTAG','CAG',0.9) == 15
 
-## run tests
-test_get_matches()
-test_get_region_rep_count()
+def test_get_alleles_from_fastq_file():
+    nv.get_read_records_from_file('test_reads.fq','fastq')
+    nv.multiprocess_read_repeats(1)
+    rep_counts = nv.convert_read_repeat_dict_to_repeat_count_list()
+    assert nv.get_VNTR_alleles(rep_counts,'centroid') == [17.0, 50.0]
+
+
