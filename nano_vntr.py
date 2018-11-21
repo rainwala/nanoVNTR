@@ -5,7 +5,6 @@ import re
 from collections import defaultdict
 from fuzzywuzzy import fuzz
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_samples, silhouette_score
 import numpy as np
 from multiprocessing import Process,Manager
 
@@ -93,6 +92,14 @@ class nanoVNTR:
         for one_process in processes:
             one_process.join()
         self.REP_DICT = dict(return_dict)
+
+    ## returns a list of records in which countable VNTRs were found
+    def get_all_countable_VNTR_reads(self):
+        reads = []
+        for i in range(len(self.READ_RECS)):
+            if (self.READ_RECS[i].id in self.REP_DICT) and (self.REP_DICT[self.READ_RECS[i].id]['REP_COUNT'] is not None):
+                reads.append(self.READ_RECS[i])
+        return reads
 
     ## prints all read summaries for reads in which VNTRs were found
     def print_read_repeat_summaries(self):
