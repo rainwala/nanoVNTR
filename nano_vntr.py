@@ -3,7 +3,6 @@ from Bio import SeqIO
 import difflib
 import re
 from collections import defaultdict
-from fuzzywuzzy import fuzz
 from sklearn.cluster import KMeans
 import numpy as np
 from multiprocessing import Process,Manager
