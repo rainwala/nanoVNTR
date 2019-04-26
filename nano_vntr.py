@@ -131,13 +131,13 @@ class nanoVNTR:
         
     ## given a list of repeat counts, an expected number of alleles (1 <= k <= 2) and a measure of average, 
     ## returns k VNTR counts
-    def get_VNTR_alleles(self,read_count_list,average_measure):
+    def get_VNTR_alleles(self,read_count_list,average_measure,random_state):
         num_alleles = self.estimate_num_alleles(read_count_list)
         # handle the special case where there is only one allele
         if num_alleles == 1:
             allele = round(np.mean(read_count_list))
             return [allele,allele]
-        km = KMeans(n_clusters=num_alleles)
+        km = KMeans(n_clusters=num_alleles,random_state=random_state) # the random_state option allows deterministic clusters if the argument is an int
         km.fit(np.array(read_count_list).reshape(-1,1))
         if average_measure == 'centroid':
             return sorted([round(cc[0]) for cc in km.cluster_centers_])
