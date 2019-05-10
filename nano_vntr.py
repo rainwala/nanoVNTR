@@ -131,7 +131,7 @@ class nanoVNTR:
         
     ## given a list of repeat counts, an expected number of alleles (1 <= k <= 2) and a measure of average, 
     ## returns k VNTR counts
-    def get_VNTR_alleles(self,read_count_list,average_measure,random_state):
+    def get_VNTR_alleles(self,read_count_list,average_measure,random_state=42):
         num_alleles = self.estimate_num_alleles(read_count_list)
         # handle the special case where there is only one allele
         if num_alleles == 1:
