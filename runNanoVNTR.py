@@ -4,9 +4,9 @@ import argparse
 
 ## add the positional arguments
 parser = argparse.ArgumentParser(description='Get the specified VNTR alleles from a file with nanopore reads in fastq format.')
-parser.add_argument("upstream_seq", help="upstream sequence flanking the VNTR",type=str)
-parser.add_argument("downstream_seq", help="downstream sequence flanking the VNTR",type=str)
-parser.add_argument("repeat_seq", help="sequence of a single repeat unit in the VNTR",type=str)
+parser.add_argument("-useq","--upstream_seq",default="CGAGTCCCTCAAGTCCTTC", help="upstream sequence flanking the VNTR",type=str)
+parser.add_argument("-dseq","--downstream_seq",default="CAACAGCCGCCACCGCCGCC", help="downstream sequence flanking the VNTR",type=str)
+parser.add_argument("-rseq","--repeat_seq",default="CAG", help="sequence of a single repeat unit in the VNTR",type=str)
 parser.add_argument("seq_file", help="file containing the nanopore reads, in fastq format",type=str)
 
 ## this function is needed to restrict the two float arguments to the required range
